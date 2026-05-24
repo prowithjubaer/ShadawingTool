@@ -133,6 +133,24 @@ function PracticeContent() {
                 setTimeout(() => setShowMotivational(''), 2500);
               }, 3200);
             }
+            // If all 4 steps done (item completed), auto-hide after delay
+            if (data.progress?.isCompleted && step === 4) {
+              setTimeout(() => {
+                setShowMotivational('🎉 Mastered! ৩ দিন পর আবার আসবে review-এর জন্য।');
+                setTimeout(() => {
+                  // Remove item from list and go to next
+                  setItems(prev => prev.filter(i => i._id !== currentItem._id));
+                  setCurrentStep(1);
+                  setCompletedSteps([]);
+                  setShowTranscript(false);
+                  setShowMotivational('');
+                  // Adjust index if needed
+                  if (currentIndex >= items.length - 1) {
+                    setCurrentIndex(Math.max(0, currentIndex - 1));
+                  }
+                }, 2500);
+              }, 3500);
+            }
           })
           .catch(() => {});
       }

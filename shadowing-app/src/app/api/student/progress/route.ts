@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     let progress = await Progress.findOne({ user: session.userId, item: itemId });
 
     if (!progress) {
-      // Brand new item - student is practicing for the first time
+      // Brand new item - student practicing for the first time
       progress = await Progress.create({
         user: session.userId,
         item: itemId,
@@ -35,53 +35,52 @@ export async function POST(req: NextRequest) {
         completedSteps: [step],
         lastPracticedAt: new Date(),
         reviewCount: 0,
+        isCompleted: false,
       });
     } else {
-      // Item came back for review (was completed before, now due)
-      // If it was completed but student is starting again, reset the steps
-      if (progress.isCompleted && step === 1) {
-        // Reset for new review round
+      // If item was previously completed (came back for review),
+      // reset it so student practices fresh
+      if (progress.isCompleted) {
         progress.isCompleted = false;
-        progress.completedSteps = [step];
-        progress.currentStep = step;
+        progress.completedSteps = [];
+        progress.currentStep = 0;
         progress.completedAt = undefined;
-      } else {
-        // Normal step progression
-        if (!progress.completedSteps.includes(step)) {
-          progress.completedSteps.push(step);
-        }
-        progress.currentStep = Math.max(progress.currentStep, step);
       }
 
+      // Add step to completedSteps if not already there
+      if (!progress.completedSteps.includes(step)) {
+        progress.completedSteps.push(step);
+      }
+      progress.currentStep = Math.max(progress.currentStep, step);
       if (selfRating) progress.selfRating = selfRating;
       progress.lastPracticedAt = new Date();
 
       // Check if all 4 steps are now completed
-      const allStepsDone = [1, 2, 3, 4].every(s => progress!.completedSteps.includes(s));
-      if (allStepsDone && !progress.isCompleted) {
+      const hasAll4 = progress.completedSteps.length >= 4;
+      if (hasAll4 && !progress.isCompleted) {
+        // Mark as completed
         progress.isCompleted = true;
         progress.completedAt = new Date();
         progress.reviewCount = (progress.reviewCount || 0) + 1;
 
         // SPACED REPETITION SCHEDULE:
-        // reviewCount 1 = first completion → come back in 3 days
-        // reviewCount 2 = second completion (3-day review) → come back in 7 days
-        // reviewCount 3 = third completion (7-day review) → MASTERED, never again
+        // reviewCount 1 = first completion → hide 3 days, then come back
+        // reviewCount 2 = second completion → hide 7 days, then come back
+        // reviewCount 3+ = MASTERED → never show again
         const rc = progress.reviewCount;
         if (rc === 1) {
           const next = new Date();
           next.setDate(next.getDate() + 3);
-          next.setHours(0, 0, 0, 0); // Start of that day
+          next.setHours(0, 0, 0, 0);
           progress.nextReviewDate = next;
         } else if (rc === 2) {
           const next = new Date();
           next.setDate(next.getDate() + 7);
           next.setHours(0, 0, 0, 0);
           progress.nextReviewDate = next;
-        } else if (rc >= 3) {
-          // Mastered! Set far future date so it never shows
-          const never = new Date('2099-12-31');
-          progress.nextReviewDate = never;
+        } else {
+          // rc >= 3 → mastered, set far future so never shows
+          progress.nextReviewDate = new Date('2099-12-31');
         }
       }
 
