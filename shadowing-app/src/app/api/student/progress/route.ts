@@ -46,29 +46,46 @@ export async function POST(req: NextRequest) {
       await progress.save();
     }
 
-    // Update user stats
-    if (progress.isCompleted) {
-      const user = await User.findById(session.userId);
-      if (user) {
-        user.xp += 10;
-        user.totalPractices += 1;
-        const today = new Date().toDateString();
-        const lastDate = user.lastPracticeDate ? user.lastPracticeDate.toDateString() : '';
-        const yesterday = new Date(Date.now() - 86400000).toDateString();
+    // Update user stats - give XP for each step AND full completion
+    const user = await User.findById(session.userId);
+    if (user) {
+      // Give XP per step (3 XP per step, bonus 8 XP on full completion)
+      const isNewStep = progress.completedSteps.length > 0;
+      if (isNewStep) {
+        user.xp += 3; // XP for each step completed
+      }
 
+      if (progress.isCompleted) {
+        user.xp += 8; // Bonus XP for completing all 4 steps
+        user.totalPractices += 1;
+      }
+
+      // Update streak
+      const today = new Date().toDateString();
+      const lastDate = user.lastPracticeDate ? user.lastPracticeDate.toDateString() : '';
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+      if (lastDate !== today) {
+        // First practice today
         if (lastDate === yesterday) {
           user.streak += 1;
-        } else if (lastDate !== today) {
+        } else if (!lastDate) {
           user.streak = 1;
+        } else {
+          user.streak = 1; // Reset streak if missed a day
         }
-        if (user.streak > user.longestStreak) user.longestStreak = user.streak;
-        user.lastPracticeDate = new Date();
-        user.level = Math.floor(user.xp / 100) + 1;
-        await user.save();
       }
+      if (user.streak > user.longestStreak) user.longestStreak = user.streak;
+      user.lastPracticeDate = new Date();
+      user.level = Math.floor(user.xp / 100) + 1;
+      await user.save();
     }
 
-    return NextResponse.json({ progress });
+    return NextResponse.json({
+      progress,
+      xpGained: progress.isCompleted ? 11 : 3,
+      userStats: user ? { xp: user.xp, level: user.level, streak: user.streak } : null,
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to update progress';
     return NextResponse.json({ error: message }, { status: 500 });

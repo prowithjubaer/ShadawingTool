@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AudioPlayer from '@/components/practice/AudioPlayer';
+import TTSPlayer from '@/components/practice/TTSPlayer';
 import RecordingPanel from '@/components/practice/RecordingPanel';
 import SelfCheckPanel from '@/components/practice/SelfCheckPanel';
 
@@ -117,7 +118,17 @@ function PracticeContent() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ itemId: currentItem._id, step }),
-        });
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (data.xpGained) {
+              setTimeout(() => {
+                setShowMotivational(`+${data.xpGained} XP earned! ⭐`);
+                setTimeout(() => setShowMotivational(''), 2500);
+              }, 3200);
+            }
+          })
+          .catch(() => {});
       }
     }
     if (step < 4) goToStep(step + 1);
@@ -305,13 +316,21 @@ function PracticeContent() {
               </div>
             )}
 
-            {/* Audio Player */}
+            {/* Audio Player - use uploaded audio if available, otherwise TTS */}
             <div className="mb-5">
-              <AudioPlayer
-                src={getAudioSrc()}
-                label={`${accent === 'british' ? '🇬🇧 British' : '🇦🇺 Australian'} Audio`}
-                accentMissing={isAudioMissing}
-              />
+              {!isAudioMissing ? (
+                <AudioPlayer
+                  src={getAudioSrc()}
+                  label={`${accent === 'british' ? '🇬🇧 British' : '🇦🇺 Australian'} Audio`}
+                  accentMissing={false}
+                />
+              ) : (
+                <TTSPlayer
+                  text={currentItem?.englishText || ''}
+                  accent={accent}
+                  label={`${accent === 'british' ? '🇬🇧 British' : '🇦🇺 Australian'} Audio`}
+                />
+              )}
             </div>
 
             {/* Step 3 hint */}
