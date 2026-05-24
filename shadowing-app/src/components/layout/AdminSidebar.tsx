@@ -9,54 +9,59 @@ const menuItems = [
   { name: 'Categories', path: '/admin/categories', icon: '📁' },
   { name: 'Levels', path: '/admin/levels', icon: '📈' },
   { name: 'Modules', path: '/admin/modules', icon: '📚' },
-  { name: 'Shadowing Items', path: '/admin/items', icon: '🎯' },
+  { name: 'Items', path: '/admin/items', icon: '🎯' },
   { name: 'Students', path: '/admin/students', icon: '👥' },
   { name: 'Batches', path: '/admin/batches', icon: '🏫' },
   { name: 'Homework', path: '/admin/homework', icon: '📝' },
   { name: 'Recordings', path: '/admin/recordings', icon: '🎙️' },
   { name: 'Analytics', path: '/admin/analytics', icon: '📈' },
-  { name: 'Import/Export', path: '/admin/import', icon: '📤' },
+  { name: 'Import', path: '/admin/import', icon: '📤' },
   { name: 'Settings', path: '/admin/settings', icon: '⚙️' },
 ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Mobile menu toggle */}
       <button
-        className="lg:hidden fixed top-20 left-4 z-40 bg-navy text-white p-2 rounded-lg shadow-lg"
-        onClick={() => setCollapsed(!collapsed)}
+        className="lg:hidden fixed top-[62px] left-3 z-40 bg-white text-navy p-2 rounded-lg shadow-md border border-gray-200"
+        onClick={() => setMobileOpen(!mobileOpen)}
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
 
-      <aside className={`fixed lg:static inset-y-0 left-0 z-30 bg-white border-r border-gray-200 shadow-sm transition-all duration-300 pt-16 lg:pt-0 ${
-        collapsed ? '-translate-x-full lg:translate-x-0 lg:w-20' : 'translate-x-0 w-64'
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-30 bg-black/30 backdrop-blur-sm" onClick={() => setMobileOpen(false)}></div>
+      )}
+
+      {/* Sidebar */}
+      <aside className={`fixed lg:static inset-y-0 left-0 z-30 bg-white w-60 border-r border-gray-100 shadow-sm transition-transform duration-300 ease-in-out pt-14 lg:pt-0 ${
+        mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
-        <div className="p-4 border-b border-gray-200">
-          <h2 className={`font-bold text-navy ${collapsed ? 'lg:text-center lg:text-xs' : 'text-lg'}`}>
-            {collapsed ? '⚙️' : 'Admin Panel'}
-          </h2>
+        <div className="p-4 border-b border-gray-100">
+          <h2 className="font-bold text-navy text-sm">Admin Panel</h2>
+          <p className="text-[10px] text-gray-400">Pro English BD</p>
         </div>
         <nav className="p-2 overflow-y-auto h-[calc(100vh-80px)]">
           {menuItems.map((item) => (
             <Link
               key={item.path}
               href={item.path}
-              onClick={() => setCollapsed(true)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-all ${
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-0.5 transition-all text-sm ${
                 pathname === item.path
-                  ? 'bg-navy text-white shadow-md'
-                  : 'text-gray-700 hover:bg-gray-100'
-              } ${collapsed ? 'lg:justify-center lg:px-2' : ''}`}
+                  ? 'bg-navy text-white shadow-sm font-medium'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-navy'
+              }`}
             >
-              <span className="text-lg">{item.icon}</span>
-              <span className={`text-sm font-medium ${collapsed ? 'lg:hidden' : ''}`}>{item.name}</span>
+              <span className="text-base">{item.icon}</span>
+              <span>{item.name}</span>
             </Link>
           ))}
         </nav>
