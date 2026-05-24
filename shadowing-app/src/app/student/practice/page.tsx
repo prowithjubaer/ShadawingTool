@@ -25,6 +25,12 @@ interface ShadowingItem {
   category?: { name: string; type: string };
   level?: { name: string };
   module?: { name: string };
+  _progress?: {
+    reviewCount: number;
+    lastPracticedAt?: string;
+    isCompleted: boolean;
+    nextReviewDate?: string;
+  } | null;
 }
 
 const STEPS = [
@@ -289,6 +295,18 @@ function PracticeContent() {
               {currentItem?.level && (
                 <span className="px-2.5 py-1 bg-gray-50 text-gray-600 rounded-full text-xs font-medium border border-gray-200">
                   {currentItem.level.name}
+                </span>
+              )}
+              {/* Review badge */}
+              {currentItem?._progress && currentItem._progress.reviewCount > 0 && (
+                <span className="px-2.5 py-1 bg-orange-50 text-orange-700 rounded-full text-xs font-medium border border-orange-200">
+                  🔄 Review #{currentItem._progress.reviewCount + 1}
+                </span>
+              )}
+              {/* Last practiced */}
+              {currentItem?._progress?.lastPracticedAt && (
+                <span className="px-2.5 py-1 bg-gray-50 text-gray-500 rounded-full text-[10px] font-medium border border-gray-100">
+                  Last: {new Date(currentItem._progress.lastPracticedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                 </span>
               )}
             </div>
